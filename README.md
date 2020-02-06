@@ -1,4 +1,4 @@
-# OMS
+# Order Management System (OMS)
 
 BUILT IN THE LARAVEL FRAMEWORK - LUMEN
 
