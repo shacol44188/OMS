@@ -41,7 +41,10 @@ class AuthServiceProvider extends ServiceProvider
         $this->app['auth']->viaRequest('api', function ($request) {
 
             if ($request->input('api_token')) {
-              $session = Session::where('token', '=', $request->input('api_token'))->where('token_expires','>',strtoupper ( date ( "d-M-y") ))->first();
+                $bv = array('api_token' => $request->input('api_token'),'date'=>strtoupper ( date ( "d-M-y") ));
+                $session = DB::connection('tyret')
+                            ->select(DB::raw('SELECT * FROM tr_api_sessions WHERE token = :api_token AND token_expires > :date'),$bv);
+             // $session = Session::where('token', '=', $request->input('api_token'))->where('token_expires','>',strtoupper ( date ( "d-M-y") ))->first();
               if(isset($session["userid"])){
                 //GET THE USER
                 $user = User::where('userid','=',$session["userid"])->first();
@@ -56,18 +59,25 @@ class AuthServiceProvider extends ServiceProvider
               $build = $request->input('build');
 
               //GET USER FROM REAL USERS
-              $user = User::where([
-                                   'userid' => $username,
-                                   'password' => $password,
-                            ])->first();
+              //$user = User::where([
+              //                     'userid' => $username,
+              //                     'password' => $password,
+              //              ])->first();
+                
+                $bv = array('username'=>$username,'password'=>$password);
+                DB::connection('tyret')
+                            ->select(DB::raw('SELECT * FROM users WHERE userid = :username AND password = :password'),$bv);
+                
 
               //IF NOT FOUND, CHECK AGAINST ALIAS
               if(!isset($user["userid"])){
-                $alias = Alias::where([
-                                     'auth_alias' => $username,
-                                     'auth_pw' => $unsecpw,
-                              ])->first();
-                error_log("whut");
+                  $bv = array('username'=>$username,'password'=>$unsecpw);
+   //             $alias = Alias::where([
+   //                                  'auth_alias' => $username,
+   //                                  'auth_pw' => $unsecpw,
+   //                           ])->first();
+                  $alias = DB::connection('tyret')
+                            ->select(DB::raw('SELECT * FROM tr_api_auth WHERE auth_alias = :username AND auth_pw = :password'),$bv);
                 if(isset($alias["auth_map"])){
                   $user = User::where('userid','=',$alias["auth_map"])->first();
                 }
